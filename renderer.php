@@ -41,7 +41,7 @@ class block_course_globalview_renderer extends plugin_renderer_base {
     public function course_globalview($courses, $overviews) {
         global $DB, $CFG, $USER;
 
-        $html = '';
+        $html = '<ul>';
         $config = get_config('block_course_globalview');
         $ismovingcourse = false;
         $courseordernumber = 0;
@@ -52,17 +52,19 @@ class block_course_globalview_renderer extends plugin_renderer_base {
         foreach ($courses as $key => $course) {
   
             if (($category == 0) || ($category != $course->category)) {
-              $category = $course->category;
-		          // Récupération du nom de la catégorie et la catégorie mère si besoin
-		          $categ = $DB->get_record('course_categories', array('id'=>$category));
-		          $categ_name = $categ->name;
+		$html = ($category != $course->category && $category != 0) ? $html.'</ul>' : $html;
+		$category = $course->category;
 
-		          if ($categ->parent != 0) {
-			          $categ_parent = $DB->get_record('course_categories', array('id'=>$categ->parent));
-			          $categ_name = $categ_parent->name."/".$categ_name;
-		          }
+		// Récupération du nom de la catégorie et la catégorie mère si besoin
+		$categ = $DB->get_record('course_categories', array('id'=>$category));
+		$categ_name = $categ->name;
 
-              $html .= '<br/><strong>'.$categ_name.'</strong> <a title="Afficher tous les cours de la catégorie '.$categ->name.'" href="'.$CFG->wwwroot.'/course/index.php?categoryid='.$categ->id.'&resort=name&sesskey='.$USER->sesskey.'" ><img src="'.$CFG->wwwroot.'/blocks/course_globalview/pix/folder.png" /></a><br/>';
+		if ($categ->parent != 0) {
+			$categ_parent = $DB->get_record('course_categories', array('id'=>$categ->parent));
+			$categ_name = $categ_parent->name."/".$categ_name;
+		}
+		
+		$html .= '<li>'.$categ_name.'</li><ul>';
 
             }
   
@@ -75,7 +77,7 @@ class block_course_globalview_renderer extends plugin_renderer_base {
                 $courseurl = new moodle_url('/course/view.php', array('id' => $course->id));
                 $coursefullname = format_string(get_course_display_name_for_list($course), true, $course->id);
                 $link = html_writer::link($courseurl, $coursefullname, $attributes);
-                $html .= $link."<br/>";
+                $html .= '<li>'.$link."</li>";
             } else {
                 $html .= $this->output->heading(html_writer::link(
                     new moodle_url('/auth/mnet/jump.php', array('hostid' => $course->hostid, 'wantsurl' => '/course/view.php?id='.$course->remoteid)),
@@ -97,6 +99,7 @@ class block_course_globalview_renderer extends plugin_renderer_base {
             $courseordernumber++;
         }
         // Wrap course list in a div and return.
+	$html .= '</ul>';
         return html_writer::tag('div', $html, array('class' => 'course_list'));
     }
 
